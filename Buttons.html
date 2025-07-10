@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Samsung Remote</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    input, button { margin: 10px; padding: 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <h2>Samsung Smart TV Remote</h2>
+  <input type="text" id="tvIP" placeholder="Enter TV IP (e.g., 192.168.1.5)" />
+  <button onclick="connect()">Connect</button>
+  <div id="status"></div>
+
+  <div id="controls" style="display:none;">
+    <button onclick="sendKey('KEY_POWER')">Power</button>
+    <button onclick="sendKey('KEY_VOLUP')">Vol +</button>
+    <button onclick="sendKey('KEY_VOLDOWN')">Vol -</button>
+    <button onclick="sendKey('KEY_MUTE')">Mute</button>
+    <button onclick="sendKey('KEY_RETURN')">Back</button>
+  </div>
+
+  <script>
+    let socket;
+
+    function connect() {
+      const ip = document.getElementById('tvIP').value.trim();
+      if (!ip) return alert('Enter a valid IP');
+
+      const encodedAppName = btoa("SamsungRemote");
+      const wsURL = `ws://${ip}:8001/api/v2/channels/samsung.remote.control?name=${encodedAppName}`;
+
+      socket = new WebSocket(wsURL);
+
+      socket.onopen = () => {
+        document.getElementById("status").innerText = "✅ Connected to " + ip;
+        document.getElementById("controls").style.display = "block";
+      };
+
+      socket.onerror = () => {
+        document.getElementById("status").innerText = "❌ Failed to connect!";
+      };
+    }
+
+    function sendKey(key) {
+      const cmd = {
+        method: "ms.remote.control",
+        params: {
+          Cmd: "Click",
+          DataOfCmd: key,
+          Option: "false",
+          TypeOfRemote: "SendRemoteKey"
+        }
+      };
+      socket.send(JSON.stringify(cmd));
+    }
+  </script>
+
+</body>
+</html>
